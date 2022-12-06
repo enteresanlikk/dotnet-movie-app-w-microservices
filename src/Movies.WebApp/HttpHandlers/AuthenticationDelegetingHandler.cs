@@ -1,0 +1,28 @@
+﻿using IdentityModel.Client;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using System.Net.Http;
+using static IdentityModel.OidcConstants;
+
+namespace Movies.WebApp.HttpHandlers;
+
+public class AuthenticationDelegetingHandler : DelegatingHandler
+{
+    private readonly IHttpContextAccessor _httpContextAccessor;
+
+    public AuthenticationDelegetingHandler(IHttpContextAccessor httpContextAccessor)
+    {
+        _httpContextAccessor = httpContextAccessor;
+    }
+
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    {
+        var accessToken = await _httpContextAccessor.HttpContext.GetTokenAsync(OpenIdConnectParameterNames.AccessToken);
+        if (!string.IsNullOrEmpty(accessToken))
+        {
+            request.SetBearerToken(accessToken);
+        }
+
+        return await base.SendAsync(request, cancellationToken);
+    }
+}
